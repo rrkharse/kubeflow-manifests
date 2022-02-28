@@ -131,13 +131,13 @@ Resources:
 
 3. Create Secrets in AWS Secrets Manager
 
-   1. Configure a secret named `rds-secret` with the RDS DB name, RDS endpoint URL, RDS DB port, and RDS DB credentials that were configured when following the steps in Create RDS Instance.
+   1. [RDS] Configure a secret named `rds-secret` with the RDS DB name, RDS endpoint URL, RDS DB port, and RDS DB credentials that were configured when following the steps in Create RDS Instance.
       - For example, if your database name is `kubeflow`, your endpoint URL is `rm12abc4krxxxxx.xxxxxxxxxxxx.us-west-2.rds.amazonaws.com`, your DB port is `3306`, your DB username is `admin`, and your DB password is `Kubefl0w` your secret should look like:
       - **Note:** These are the default values for the database name and credentials in cloudformation template for creating the RDS instance, change these according to the values you used
       - ```
         aws secretsmanager create-secret --name rds-secret --secret-string '{"username":"admin","password":"Kubefl0w","database":"kubeflow","host":"rm12abc4krxxxxx.xxxxxxxxxxxx.us-west-2.rds.amazonaws.com","port":"3306"}' --region $CLUSTER_REGION
         ```
-   1. Configure a secret named `s3-secret` with your AWS credentials. These need to be long term credentials from an IAM user and not temporary.
+   1. [S3] Configure a secret named `s3-secret` with your AWS credentials. These need to be long term credentials from an IAM user and not temporary.
       - Find more details about configuring/getting your AWS credentials here:
         https://docs.aws.amazon.com/general/latest/gr/aws-security-credentials.html
       - ```
@@ -169,12 +169,15 @@ Resources:
 
 5. Configure Kubeflow Pipelines by editing the following file in `awsconfigs/apps/pipeline` directory:
 
-   1. Configure `awsconfigs/apps/pipeline/params.env` file with the RDS endpoint URL, S3 bucket name, and S3 bucket region that were configured when following the steps in Create RDS Instance and Create S3 Bucket steps in prerequisites(#1-prerequisites).
-
-      - For example, if your RDS endpoint URL is `rm12abc4krxxxxx.xxxxxxxxxxxx.us-west-2.rds.amazonaws.com`, S3 bucket name is `kf-aws-demo-bucket`, and s3 bucket region is `us-west-2` your `params.env` file should look like:
+      - For example, if your RDS endpoint URL is `rm12abc4krxxxxx.xxxxxxxxxxxx.us-west-2.rds.amazonaws.com` your `params.env` file should look like:
       - ```
         dbHost=rm12abc4krxxxxx.xxxxxxxxxxxx.us-west-2.rds.amazonaws.com
+        ```
 
+   2. [S3] Configure `awsconfigs/apps/pipeline/s3/params.env` file with the S3 bucket name, and S3 bucket region that were configured when following the steps in Create S3 Bucket steps in prerequisites(#1-prerequisites).
+
+      - For example, if your S3 bucket name is `kf-aws-demo-bucket` and s3 bucket region is `us-west-2` your `params.env` file should look like:
+      - ```
         bucketName=kf-aws-demo-bucket
         minioServiceHost=s3.amazonaws.com
         minioServiceRegion=us-west-2
@@ -183,8 +186,27 @@ Resources:
 ## 3.0 Build Manifests and Install Kubeflow
 Once you have the resources ready, you can continue on to deploying the Kubeflow manifests using the single line command below -
 
+Choose your deployment option below from:
+- Deploying the configuration for both RDS and S3
+- Deploying the configuration for RDS only
+- Deploying the configuration for S3 only
+
+#### [RDS and S3] Deploy both RDS and S3
+
 ```sh
 while ! kustomize build docs/deployment/rds-s3 | kubectl apply -f -; do echo "Retrying to apply resources"; sleep 10; done
+```
+
+#### [RDS] Deploy RDS only
+
+```sh
+while ! kustomize build docs/deployment/rds-s3/rds | kubectl apply -f -; do echo "Retrying to apply resources"; sleep 10; done
+```
+
+#### [S3] Deploy S3 only
+
+```sh
+while ! kustomize build docs/deployment/rds-s3/s3 | kubectl apply -f -; do echo "Retrying to apply resources"; sleep 10; done
 ```
 
 Once, everything is installed successfully, you can access the Kubeflow Central Dashboard [by logging in to your cluster](../vanilla/README.md#connect-to-your-kubeflow-cluster).
